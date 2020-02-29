@@ -15,14 +15,7 @@ namespace RentalShopService.Tests
 {
     public class EmployeeServiceTests
     {
-        protected Mock<IUnitOfWork> _unitOfWorkMock;
-        protected IEmployeeService _employeeService;
-
-        public EmployeeServiceTests()
-        {
-            _unitOfWorkMock = new Mock<IUnitOfWork>();
-
-            var employees = new List<Employee>() {
+        protected readonly List<Employee> _defaultEmployees = new List<Employee>() {
                 new Employee
                 {
                     Id = 1,
@@ -49,19 +42,28 @@ namespace RentalShopService.Tests
                 }
             };
 
-            _unitOfWorkMock.Setup(x => x.GetRepositoryAsync<Employee>().GetAll()).ReturnsAsync(employees);
+        private IEmployeeService CreateDefaultEmployeeService(List<Employee> employees)
+        {
+            var _unitOfWorkMock = new Mock<IUnitOfWork>();
 
             var profile = new AutoMapperProfile();
             var configuration = new MapperConfiguration(cfg => cfg.AddProfile(profile));
+            var _mapper = new Mapper(configuration);
 
-            _employeeService = new EmployeeService(_unitOfWorkMock.Object, new Mapper(configuration));
+            _unitOfWorkMock.Setup(x => x.GetRepositoryAsync<Employee>().GetAll()).ReturnsAsync(employees);
+            return new EmployeeService(_unitOfWorkMock.Object, _mapper);
         }
 
         [Fact]
-        public async void GetAllTest()
+        public async void GetAll_ShouldReturnAllEmployees()
         {
+            //Arrange
+            var _employeeService = CreateDefaultEmployeeService(_defaultEmployees);
+
+            //Act
             var employees = await _employeeService.GetAll().ConfigureAwait(false);
 
+            //Assert
             Assert.Equal(2, employees.Count());
         }
     }
